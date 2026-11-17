@@ -71,8 +71,9 @@
   #vmsg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#e0735f;font:14px system-ui,sans-serif;pointer-events:none}
 
   /* navegação */
-  #nav{position:fixed;bottom:12px;left:12px;z-index:20;display:flex;align-items:center;gap:14px;padding:6px 12px;border-radius:14px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);transition:opacity .4s}
-  #nav.idle{opacity:0;pointer-events:none}
+  #nav{position:fixed;bottom:12px;left:12px;z-index:20;display:flex;align-items:center;gap:14px;padding:6px 12px;border-radius:14px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);opacity:0;transition:opacity .25s}
+  #nav:hover{opacity:1}
+  @media (hover:none){#nav{opacity:.3}}   /* celular: fica bem discreta */
   #nav button{width:48px;height:44px;border:1px solid #555;background:#111;color:#fff;font-size:20px;border-radius:10px;cursor:pointer}
   #nav button:disabled{opacity:.3;cursor:default}
   #count{min-width:64px;text-align:center;font-size:15px;color:#bbb}
@@ -143,8 +144,8 @@ function show(n){
   card.classList.toggle('on',i===N-1);
   if(i!==N-1) au.pause();
 }
-$('prev').onclick=()=>show(i-1);
-$('next').onclick=()=>show(i+1);
+$('prev').onclick=e=>{show(i-1);e.currentTarget.blur()};
+$('next').onclick=e=>{show(i+1);e.currentTarget.blur()};
 addEventListener('keydown',e=>{
   if(pop.classList.contains('on')){ if(e.key==='Escape')closePop(); return; }
   if(e.key==='f'||e.key==='F')fs();
@@ -194,12 +195,10 @@ au.addEventListener('timeupdate',()=>{
   else if(t<POP_AT-1)popped=false;
 });
 
-/* tela cheia + esconde os botões quando parado */
+/* tela cheia */
 const fs=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
 $('fs').onclick=e=>{fs();e.currentTarget.blur()};
 if(!document.documentElement.requestFullscreen)$('fs').style.display='none';
-let idleT; const wake=()=>{$('nav').classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>$('nav').classList.add('idle'),2500)};
-['mousemove','pointerdown','keydown'].forEach(ev=>addEventListener(ev,wake)); wake();
 
 show(0);
 </script>
