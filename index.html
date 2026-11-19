@@ -214,8 +214,8 @@ au.onplay=()=>{icon.setAttribute('d','M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z');card
 au.onpause=()=>{icon.setAttribute('d','M7 4.5l13 7.5-13 7.5z');card.classList.remove('playing');$('mIcon').setAttribute('d','M7 4.5l13 7.5-13 7.5z');$('mTxt').textContent='Tocar música';updMini()};
 $('exit').onclick=e=>{e.currentTarget.blur();show(N-1)};
 $('mini').onclick=e=>{toggle();e.currentTarget.blur()};
-/* botão "Matriz": vai para o slide 4 e toca a música desde o início */
-$('mx').onclick=e=>{e.currentTarget.blur();popped=false;au.currentTime=0;show(MX);au.play().catch(()=>{});};
+/* botão "Matriz": vai para o slide 4 e toca a música de onde ela estava */
+$('mx').onclick=e=>{e.currentTarget.blur();show(MX);au.play().catch(()=>{});};
 au.ontimeupdate=au.onloadedmetadata=au.ondurationchange=draw;
 au.onended=()=>{au.currentTime=0;draw()};
 au.onerror=()=>{const a=$('artist');a.textContent='Falta o arquivo musica.mp3';a.classList.add('err')};
