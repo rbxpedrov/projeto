@@ -36,6 +36,17 @@
   .right{display:flex;align-items:center;gap:12px}
   #spd{font:700 11px/1 system-ui,sans-serif;color:#d9ad66;border:1px solid rgba(217,173,102,.55);background:rgba(217,173,102,.08);border-radius:999px;padding:6px 10px;min-width:42px;cursor:pointer;transition:background .15s,color .15s}
   #spd:hover{background:#d9ad66;color:#1a1209}
+  #mx{font:700 11px/1 system-ui,sans-serif;color:#1a1209;border:0;background:linear-gradient(145deg,#f4d79b,#c08a3e);border-radius:999px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+  #mx:hover{filter:brightness(1.1)}
+  #mini{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:20;display:none;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:1px solid rgba(217,173,102,.7);background:rgba(26,18,9,.88);backdrop-filter:blur(6px);color:#f3e7d0;font:600 14px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.7)}
+  #mini.on{display:flex}
+  #mini svg,#mx svg{width:14px;height:14px;fill:currentColor;flex:none}
+  #mx{display:flex;align-items:center;gap:6px}
+  #exit{position:fixed;top:16px;right:16px;z-index:20;display:none;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:1px solid rgba(217,173,102,.7);background:rgba(26,18,9,.88);backdrop-filter:blur(6px);color:#f3e7d0;font:600 14px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.7)}
+  #exit.on{display:flex}
+  #exit:hover{background:#c08a3e;color:#1a1209}
+  #exit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #mini:hover{background:#c08a3e;color:#1a1209}
   .eq{display:flex;align-items:flex-end;gap:3px;height:22px}
   .eq i{width:4px;height:30%;background:linear-gradient(#f0cd8c,#b8863f);border-radius:2px;animation:eq 1s ease-in-out infinite;animation-play-state:paused}
   .eq i:nth-child(2){animation-delay:-.4s;animation-duration:.8s}
@@ -98,6 +109,7 @@
           <div class="artist" id="artist">Chico Buarque</div>
         </div>
         <div class="right">
+          <button id="mx" aria-label="Tocar a música com a matriz"><svg viewBox="0 0 24 24"><path d="M7 4.5l13 7.5-13 7.5z"/></svg>Matriz</button>
           <button id="spd" aria-label="Velocidade da música">1x</button>
           <div class="eq"><i></i><i></i><i></i><i></i></div>
         </div>
@@ -125,6 +137,8 @@
   <button id="next" aria-label="Próximo">→</button>
   <button id="fs" aria-label="Tela cheia" title="Tela cheia (F)">⛶</button>
 </div>
+<button id="mini" aria-label="Tocar ou pausar a música"><svg viewBox="0 0 24 24"><path id="mIcon" d="M7 4.5l13 7.5-13 7.5z"/></svg><span id="mTxt">Tocar música</span></button>
+<button id="exit" aria-label="Voltar ao slide 7"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
 <div id="pop" role="dialog" aria-label="Vídeo">
   <div class="box">
     <button id="x" aria-label="Fechar vídeo">✕</button>
@@ -139,6 +153,7 @@ const $=id=>document.getElementById(id);
 const stage=$('stage'), imgs=[...stage.querySelectorAll(':scope>img')], N=imgs.length;
 const au=$('au'), card=$('card'), icon=$('pIcon'), seek=$('seek');
 let i=0;
+const MX=3;   // índice do slide 4 (matriz decodificada da letra)
 
 /* escala do player acompanha o tamanho da tela (mínimo p/ caber no celular) */
 const fit=()=>stage.style.setProperty('--s',Math.max(stage.clientWidth/1440,.62));
@@ -151,7 +166,12 @@ function show(n){
   $('count').textContent=(i+1)+' / '+N;
   $('prev').disabled=i===0; $('next').disabled=i===N-1;
   card.classList.toggle('on',i===N-1);
-  if(i!==N-1) au.pause();
+  updMini();
+}
+/* botões extras: "tocar/pausar" aparece no slide 4 (ou em qualquer slide enquanto a música toca); "Voltar" só no slide 4 */
+function updMini(){
+  $('mini').classList.toggle('on',i!==N-1&&(i===MX||!au.paused));
+  $('exit').classList.toggle('on',i===MX);
 }
 $('prev').onclick=e=>{show(i-1);e.currentTarget.blur()};
 $('next').onclick=e=>{show(i+1);e.currentTarget.blur()};
@@ -160,7 +180,7 @@ addEventListener('keydown',e=>{
   if(e.key==='f'||e.key==='F')fs();
   else if(e.key==='ArrowRight'||e.key==='PageDown'){e.preventDefault();show(i+1);}
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(i-1);}
-  else if(e.code==='Space'&&i===N-1){e.preventDefault();toggle();}
+  else if(e.code==='Space'&&(i===N-1||i===MX||!au.paused)){e.preventDefault();toggle();}
 });
 let mx=null;   // arrastar com o mouse (computador)
 addEventListener('mousedown',e=>{ if(e.button===0&&!e.target.closest('#card,#pop,#nav'))mx=e.clientX; });
@@ -190,8 +210,12 @@ $('back').onclick=e=>{au.currentTime=Math.max(0,au.currentTime-10);e.currentTarg
 $('fwd').onclick=e=>{if(au.duration)au.currentTime=Math.min(au.duration,au.currentTime+10);e.currentTarget.blur()};
 seek.addEventListener('input',()=>{seeking=true;seek.style.setProperty('--p',seek.value/10+'%');if(au.duration)au.currentTime=seek.value/1000*au.duration;});
 seek.addEventListener('change',()=>{seeking=false;seek.blur();});
-au.onplay=()=>{icon.setAttribute('d','M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z');card.classList.add('playing')};
-au.onpause=()=>{icon.setAttribute('d','M7 4.5l13 7.5-13 7.5z');card.classList.remove('playing')};
+au.onplay=()=>{icon.setAttribute('d','M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z');card.classList.add('playing');$('mIcon').setAttribute('d','M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z');$('mTxt').textContent='Pausar música';updMini()};
+au.onpause=()=>{icon.setAttribute('d','M7 4.5l13 7.5-13 7.5z');card.classList.remove('playing');$('mIcon').setAttribute('d','M7 4.5l13 7.5-13 7.5z');$('mTxt').textContent='Tocar música';updMini()};
+$('exit').onclick=e=>{e.currentTarget.blur();show(N-1)};
+$('mini').onclick=e=>{toggle();e.currentTarget.blur()};
+/* botão "Matriz": vai para o slide 4 e toca a música desde o início */
+$('mx').onclick=e=>{e.currentTarget.blur();popped=false;au.currentTime=0;show(MX);au.play().catch(()=>{});};
 au.ontimeupdate=au.onloadedmetadata=au.ondurationchange=draw;
 au.onended=()=>{au.currentTime=0;draw()};
 au.onerror=()=>{const a=$('artist');a.textContent='Falta o arquivo musica.mp3';a.classList.add('err')};
@@ -222,7 +246,7 @@ vid.onerror=()=>{$('vmsg').style.display='flex'};
 
 /* checagem a cada 50 ms (o evento timeupdate só dispara ~4x por segundo e atrasa o pop-up) */
 setInterval(()=>{
-  if(au.paused||i!==N-1)return;
+  if(au.paused)return;
   const t=au.currentTime;
   if(t>=POP_AT&&t<POP_AT+3&&!popped){popped=true;openPop();}
   else if(t<POP_AT-1)popped=false;
