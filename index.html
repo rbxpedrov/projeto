@@ -33,6 +33,9 @@
   .song{font-size:22px;letter-spacing:.5px;line-height:1.1}
   .artist{font:600 11px/1 system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#d9ad66;margin-top:6px}
   .artist.err{color:#e0735f;letter-spacing:.04em;text-transform:none}
+  .right{display:flex;align-items:center;gap:12px}
+  #spd{font:700 11px/1 system-ui,sans-serif;color:#d9ad66;border:1px solid rgba(217,173,102,.55);background:rgba(217,173,102,.08);border-radius:999px;padding:6px 10px;min-width:42px;cursor:pointer;transition:background .15s,color .15s}
+  #spd:hover{background:#d9ad66;color:#1a1209}
   .eq{display:flex;align-items:flex-end;gap:3px;height:22px}
   .eq i{width:4px;height:30%;background:linear-gradient(#f0cd8c,#b8863f);border-radius:2px;animation:eq 1s ease-in-out infinite;animation-play-state:paused}
   .eq i:nth-child(2){animation-delay:-.4s;animation-duration:.8s}
@@ -94,7 +97,10 @@
           <div class="song">Cálice</div>
           <div class="artist" id="artist">Chico Buarque</div>
         </div>
-        <div class="eq"><i></i><i></i><i></i><i></i></div>
+        <div class="right">
+          <button id="spd" aria-label="Velocidade da música">1x</button>
+          <div class="eq"><i></i><i></i><i></i><i></i></div>
+        </div>
       </div>
       <input id="seek" type="range" min="0" max="1000" value="0" step="1" tabindex="-1" aria-label="Progresso da música">
       <div class="row">
@@ -190,19 +196,37 @@ au.ontimeupdate=au.onloadedmetadata=au.ondurationchange=draw;
 au.onended=()=>{au.currentTime=0;draw()};
 au.onerror=()=>{const a=$('artist');a.textContent='Falta o arquivo musica.mp3';a.classList.add('err')};
 
+/* velocidade: 1x → 1.5x → 2x → 1x */
+const SPEEDS=[1,1.5,2]; let si=0;
+$('spd').onclick=e=>{
+  si=(si+1)%SPEEDS.length;
+  au.playbackRate=SPEEDS[si];
+  e.currentTarget.textContent=SPEEDS[si]+'x';
+  e.currentTarget.blur();
+};
+
 /* ---------- vídeo pop-up ---------- */
 const POP_AT=22;                       // segundo da música em que o vídeo aparece
 const pop=$('pop'), vid=$('vid'); let popped=false, wasPlaying=false;
-function openPop(){ wasPlaying=!au.paused; au.pause(); pop.classList.add('on'); vid.currentTime=0; vid.play().catch(()=>{}); }
-function closePop(){ vid.pause(); pop.classList.remove('on'); if(wasPlaying)au.play().catch(()=>{}); }
+let enteredFs=false;
+function openPop(){
+  wasPlaying=!au.paused; au.pause(); pop.classList.add('on'); vid.currentTime=0; vid.play().catch(()=>{});
+  // tela cheia de verdade (se a página já estiver em tela cheia, já está ok)
+  if(!document.fullscreenElement&&pop.requestFullscreen) pop.requestFullscreen().then(()=>enteredFs=true).catch(()=>{});
+}
+function closePop(){ vid.pause(); pop.classList.remove('on'); if(enteredFs&&document.fullscreenElement){document.exitFullscreen();} enteredFs=false; if(wasPlaying)au.play().catch(()=>{}); }
 $('x').onclick=closePop;
 pop.addEventListener('click',e=>{ if(e.target===pop)closePop(); });
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&enteredFs&&pop.classList.contains('on'))closePop(); });
 vid.onerror=()=>{$('vmsg').style.display='flex'};
-au.addEventListener('timeupdate',()=>{
+
+/* checagem a cada 50 ms (o evento timeupdate só dispara ~4x por segundo e atrasa o pop-up) */
+setInterval(()=>{
+  if(au.paused||i!==N-1)return;
   const t=au.currentTime;
-  if(t>=POP_AT&&t<POP_AT+3&&!popped&&i===N-1){popped=true;openPop();}
+  if(t>=POP_AT&&t<POP_AT+3&&!popped){popped=true;openPop();}
   else if(t<POP_AT-1)popped=false;
-});
+},50);
 
 /* tela cheia */
 const fs=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
