@@ -191,7 +191,7 @@ au.onended=()=>{au.currentTime=0;draw()};
 au.onerror=()=>{const a=$('artist');a.textContent='Falta o arquivo musica.mp3';a.classList.add('err')};
 
 /* ---------- vídeo pop-up ---------- */
-const POP_AT=23;                       // segundo da música em que o vídeo aparece
+const POP_AT=22;                       // segundo da música em que o vídeo aparece
 const pop=$('pop'), vid=$('vid'); let popped=false, wasPlaying=false;
 function openPop(){ wasPlaying=!au.paused; au.pause(); pop.classList.add('on'); vid.currentTime=0; vid.play().catch(()=>{}); }
 function closePop(){ vid.pause(); pop.classList.remove('on'); if(wasPlaying)au.play().catch(()=>{}); }
